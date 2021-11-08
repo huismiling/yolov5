@@ -1,0 +1,9 @@
+dump_file/
+compile_graph/
+diff_jsons/
+profile/
+
+*.model
+*.pb
+*.bin
+*.jpg
