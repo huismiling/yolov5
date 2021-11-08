@@ -14,11 +14,8 @@ from magicmind_model import MagicMindModel
 
 sys.path.append("/workspace/zhangxiao/work/yolov5/")
 from utils.datasets import LoadImages
-from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, colorstr, \
-    increment_path, non_max_suppression, print_args, save_one_box, scale_coords, set_logging, \
-    strip_optimizer, xyxy2xywh
+from utils.general import non_max_suppression, scale_coords
 from utils.plots import Annotator, colors
-from utils.torch_utils import load_classifier, select_device, time_sync
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -37,7 +34,6 @@ if __name__ == '__main__':
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --classes 0, or --classes 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-
 
     args = parser.parse_args()
     stride, names = 64, COCO_CLASSES  # assign defaults

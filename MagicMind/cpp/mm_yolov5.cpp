@@ -231,8 +231,6 @@ static int detect_yolov5(const char *model_name, const cv::Mat& bgr, std::vector
     // // which means users don't need to extra padding info to decode boxes coordinate.
     cv::Mat in_u8(target_size, target_size, CV_8UC3, cv::Scalar(114, 114, 114));
     in.copyTo(in_u8(cv::Rect(wpad/2, hpad/2, in.cols, in.rows)));
-    // cv::Mat in_pad(target_size, target_size, CV_32FC3);
-    // cv::multiply(in_u8, 1/255.0, in_pad);
 
     std::vector<Object> proposals;
 
