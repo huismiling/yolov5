@@ -17,7 +17,7 @@ parser.add_argument("--quant_datasets", help="", type=str, default="quant_datase
 # "qint16_mixed_float32", "qint16_mixed_float16", 
 # "force_float16" and "force_float32".
 parser.add_argument("--quant_mode", help="", type=str, default="qint8_mixed_float16")
-parser.add_argument("--input_shapes", help="", type=list, default=[[8, 3, 640, 640]])
+parser.add_argument("--input_shapes", help="", type=list, default=[[1, 3, 640, 640]])
 parser.add_argument("--input_dtypes", help="", type=list, default=["float32"])
 
 args = parser.parse_args()
@@ -81,6 +81,9 @@ def build_model(network):
         # calibrate the network
         calibrator.calibrate(network, config)
 
+    for itn in ['472', '531', '590']:
+        itensor = network.find_tensor_by_name(itn)
+        network.unmark_output(itensor)
     builder = mm.Builder()
     model = builder.build_model("test", network, config)
     assert model != None, "Failed to build model"
@@ -105,6 +108,7 @@ if __name__ == '__main__':
     network = parse_model()
     #创建model
     model = build_model(network)
+    print(model.get_output_names())
     model.serialize_to_file(args.mm_file_name)
     with mm.System():
         # 创建运行模型时的上下文
