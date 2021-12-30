@@ -1,0 +1,10 @@
+cp /datasets/COCO/test2017/000000000001.jpg quant_datasets/
+cp /datasets/COCO/test2017/000000000016.jpg quant_datasets/
+cp /datasets/COCO/test2017/000000000019.jpg quant_datasets/
+cp /datasets/COCO/test2017/000000000057.jpg quant_datasets/
+cp /datasets/COCO/test2017/000000000063.jpg quant_datasets/
+cp /datasets/COCO/test2017/000000000069.jpg quant_datasets/
+cp /datasets/COCO/test2017/000000000080.jpg quant_datasets/
+cp /datasets/COCO/test2017/000000000090.jpg quant_datasets/
+cp /datasets/COCO/test2017/000000000106.jpg quant_datasets/
+cp /datasets/COCO/test2017/000000000108.jpg quant_datasets/
