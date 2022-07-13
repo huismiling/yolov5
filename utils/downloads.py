@@ -14,6 +14,7 @@ from zipfile import ZipFile
 
 import requests
 import torch
+import torch_mlu
 
 
 def is_url(url):

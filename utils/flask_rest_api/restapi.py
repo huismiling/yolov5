@@ -7,6 +7,7 @@ import argparse
 import io
 
 import torch
+import torch_mlu
 from flask import Flask, request
 from PIL import Image
 

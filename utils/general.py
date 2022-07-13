@@ -30,6 +30,7 @@ import numpy as np
 import pandas as pd
 import pkg_resources as pkg
 import torch
+import torch_mlu
 import torchvision
 import yaml
 
@@ -209,8 +210,8 @@ def init_seeds(seed=0, deterministic=False):
     np.random.seed(seed)
     torch.manual_seed(seed)
     cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
-    # torch.cuda.manual_seed(seed)
-    # torch.cuda.manual_seed_all(seed)  # for multi GPU, exception safe
+    # torch.mlu.manual_seed(seed)
+    # torch.mlu.manual_seed_all(seed)  # for multi GPU, exception safe
 
 
 def intersect_dicts(da, db, exclude=()):

@@ -7,6 +7,7 @@ from copy import deepcopy
 
 import numpy as np
 import torch
+import torch_mlu
 
 from utils.general import LOGGER, colorstr, emojis
 from utils.torch_utils import profile
@@ -14,7 +15,7 @@ from utils.torch_utils import profile
 
 def check_train_batch_size(model, imgsz=640, amp=True):
     # Check YOLOv5 training batch size
-    with torch.cuda.amp.autocast(amp):
+    with torch.mlu.amp.autocast(amp):
         return autobatch(deepcopy(model).train(), imgsz)  # compute optimal batch size
 
 
@@ -37,10 +38,10 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     # Inspect CUDA memory
     gb = 1 << 30  # bytes to GiB (1024 ** 3)
     d = str(device).upper()  # 'CUDA:0'
-    properties = torch.cuda.get_device_properties(device)  # device properties
+    properties = torch.mlu.get_device_properties(device)  # device properties
     t = properties.total_memory / gb  # GiB total
-    r = torch.cuda.memory_reserved(device) / gb  # GiB reserved
-    a = torch.cuda.memory_allocated(device) / gb  # GiB allocated
+    r = torch.mlu.memory_reserved(device) / gb  # GiB reserved
+    a = torch.mlu.memory_allocated(device) / gb  # GiB allocated
     f = t - (r + a)  # GiB free
     LOGGER.info(f'{prefix}{d} ({properties.name}) {t:.2f}G total, {r:.2f}G reserved, {a:.2f}G allocated, {f:.2f}G free')
 

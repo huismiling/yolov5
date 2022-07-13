@@ -14,6 +14,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import torch
+import torch_mlu
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
@@ -26,21 +27,23 @@ except ImportError:
     thop = None
 
 # Suppress PyTorch warnings
-warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\', but CUDA is not available. Disabling')
+warnings.filterwarnings('ignore', message='User provided device_type of \'mlu\', but CUDA is not available. Disabling')
 
 
 @contextmanager
 def torch_distributed_zero_first(local_rank: int):
     # Decorator to make all processes in distributed training wait for each local_master to do something
     if local_rank not in [-1, 0]:
-        dist.barrier(device_ids=[local_rank])
+        # dist.barrier(device_ids=[local_rank])
+        dist.barrier()
     yield
     if local_rank == 0:
-        dist.barrier(device_ids=[0])
+        # dist.barrier(device_ids=[0])
+        dist.barrier()
 
 
 def device_count():
-    # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Supports Linux and Windows
+    # Returns number of CUDA devices available. Safe version of torch.mlu.device_count(). Supports Linux and Windows
     assert platform.system() in ('Linux', 'Windows'), 'device_count() only supported on Linux or Windows'
     try:
         cmd = 'nvidia-smi -L | wc -l' if platform.system() == 'Linux' else 'nvidia-smi -L | find /c /v ""'  # Windows
@@ -52,26 +55,26 @@ def device_count():
 def select_device(device='', batch_size=0, newline=True):
     # device = None or 'cpu' or 0 or '0' or '0,1,2,3'
     s = f'YOLOv5 🚀 {git_describe() or file_date()} Python-{platform.python_version()} torch-{torch.__version__} '
-    device = str(device).strip().lower().replace('cuda:', '').replace('none', '')  # to string, 'cuda:0' to '0'
+    device = str(device).strip().lower().replace('mlu:', '').replace('none', '')  # to string, 'mlu:0' to '0'
     cpu = device == 'cpu'
     mps = device == 'mps'  # Apple Metal Performance Shaders (MPS)
     if cpu or mps:
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
+        os.environ['MLU_VISIBLE_DEVICES'] = '-1'  # force torch.mlu.is_available() = False
     elif device:  # non-cpu device requested
-        os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable - must be before assert is_available()
-        assert torch.cuda.is_available() and torch.cuda.device_count() >= len(device.replace(',', '')), \
-            f"Invalid CUDA '--device {device}' requested, use '--device cpu' or pass valid CUDA device(s)"
+        os.environ['MLU_VISIBLE_DEVICES'] = device  # set environment variable - must be before assert is_available()
+        assert torch.mlu.is_available() and torch.mlu.device_count() >= len(device.replace(',', '')), \
+            f"Invalid MLU '--device {device}' requested, use '--device cpu' or pass valid MLU device(s)"
 
-    if not (cpu or mps) and torch.cuda.is_available():  # prefer GPU if available
-        devices = device.split(',') if device else '0'  # range(torch.cuda.device_count())  # i.e. 0,1,6,7
+    if not (cpu or mps) and torch.mlu.is_available():  # prefer GPU if available
+        devices = device.split(',') if device else '0'  # range(torch.mlu.device_count())  # i.e. 0,1,6,7
         n = len(devices)  # device count
         if n > 1 and batch_size > 0:  # check batch_size is divisible by device_count
             assert batch_size % n == 0, f'batch-size {batch_size} not multiple of GPU count {n}'
         space = ' ' * (len(s) + 1)
         for i, d in enumerate(devices):
-            p = torch.cuda.get_device_properties(i)
-            s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / (1 << 20):.0f}MiB)\n"  # bytes to MB
-        arg = 'cuda:0'
+            p = torch.mlu.get_device_properties(i)
+            s += f"{'' if i == 0 else space}MLU:{d} ({p.name}, {p.total_memory / (1 << 20):.0f}MiB)\n"  # bytes to MB
+        arg = 'mlu:0'
     elif mps and getattr(torch, 'has_mps', False) and torch.backends.mps.is_available():  # prefer MPS if available
         s += 'MPS\n'
         arg = 'mps'
@@ -87,8 +90,8 @@ def select_device(device='', batch_size=0, newline=True):
 
 def time_sync():
     # PyTorch-accurate time
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
+    if torch.mlu.is_available():
+        torch.mlu.synchronize()
     return time.time()
 
 
@@ -132,7 +135,7 @@ def profile(input, ops, n=10, device=None):
                         t[2] = float('nan')
                     tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
                     tb += (t[2] - t[1]) * 1000 / n  # ms per op backward
-                mem = torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0  # (GB)
+                mem = torch.mlu.memory_reserved() / 1E9 if torch.mlu.is_available() else 0  # (GB)
                 s_in, s_out = (tuple(x.shape) if isinstance(x, torch.Tensor) else 'list' for x in (x, y))  # shapes
                 p = sum(x.numel() for x in m.parameters()) if isinstance(m, nn.Module) else 0  # parameters
                 print(f'{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{str(s_in):>24s}{str(s_out):>24s}')
@@ -140,7 +143,7 @@ def profile(input, ops, n=10, device=None):
             except Exception as e:
                 print(e)
                 results.append(None)
-            torch.cuda.empty_cache()
+            torch.mlu.empty_cache()
     return results
 
 

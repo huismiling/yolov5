@@ -6,6 +6,7 @@ import math
 
 import numpy as np
 import torch
+import torch_mlu
 import torch.nn as nn
 
 from models.common import Conv

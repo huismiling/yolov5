@@ -7,6 +7,7 @@ import random
 
 import numpy as np
 import torch
+import torch_mlu
 import yaml
 from tqdm import tqdm
 

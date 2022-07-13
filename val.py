@@ -26,6 +26,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torch_mlu
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
@@ -102,7 +103,7 @@ def run(
         conf_thres=0.001,  # confidence threshold
         iou_thres=0.6,  # NMS IoU threshold
         task='val',  # train, val, test, speed or study
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        device='',  # mlu device, i.e. 0 or 0,1,2,3 or cpu
         workers=8,  # max dataloader workers (per RANK in DDP mode)
         single_cls=False,  # treat as single-class dataset
         augment=False,  # augmented inference
@@ -154,7 +155,7 @@ def run(
 
     # Configure
     model.eval()
-    cuda = device.type != 'cpu'
+    mlu = device.type != 'cpu'
     is_coco = isinstance(data.get('val'), str) and data['val'].endswith(f'coco{os.sep}val2017.txt')  # COCO dataset
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10, device=device)  # iou vector for mAP@0.5:0.95
@@ -193,7 +194,7 @@ def run(
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
         callbacks.run('on_val_batch_start')
         t1 = time_sync()
-        if cuda:
+        if mlu:
             im = im.to(device, non_blocking=True)
             targets = targets.to(device)
         im = im.half() if half else im.float()  # uint8 to fp16/32
@@ -336,7 +337,7 @@ def parse_opt():
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='', help='mlu device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')

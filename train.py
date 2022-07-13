@@ -24,6 +24,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torch_mlu
 import torch.distributed as dist
 import torch.nn as nn
 import yaml
@@ -100,7 +101,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Config
     plots = not evolve and not opt.noplots  # create plots
-    cuda = device.type != 'cpu'
+    mlu = device.type != 'cpu'
     init_seeds(opt.seed + 1 + RANK, deterministic=True)
     with torch_distributed_zero_first(LOCAL_RANK):
         data_dict = data_dict or check_dataset(data)  # check if None
@@ -206,14 +207,14 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
         del ckpt, csd
 
-    # DP mode
-    if cuda and RANK == -1 and torch.cuda.device_count() > 1:
-        LOGGER.warning('WARNING: DP not recommended, use torch.distributed.run for best DDP Multi-GPU results.\n'
-                       'See Multi-GPU Tutorial at https://github.com/ultralytics/yolov5/issues/475 to get started.')
-        model = torch.nn.DataParallel(model)
+    # DP mode - MLU not support DP, only support DDP
+    # if mlu and RANK == -1 and torch.mlu.device_count() > 1:
+    #     LOGGER.warning('WARNING: DP not recommended, use torch.distributed.run for best DDP Multi-GPU results.\n'
+    #                    'See Multi-GPU Tutorial at https://github.com/ultralytics/yolov5/issues/475 to get started.')
+    #     model = torch.nn.DataParallel(model)
 
     # SyncBatchNorm
-    if opt.sync_bn and cuda and RANK != -1:
+    if opt.sync_bn and mlu and RANK != -1:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
         LOGGER.info('Using SyncBatchNorm()')
 
@@ -268,7 +269,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         callbacks.run('on_pretrain_routine_end')
 
     # DDP mode
-    if cuda and RANK != -1:
+    if mlu and RANK != -1:
         if check_version(torch.__version__, '1.11.0'):
             model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
         else:
@@ -293,7 +294,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
-    scaler = torch.cuda.amp.GradScaler(enabled=amp)
+    scaler = torch.mlu.amp.GradScaler(enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
     compute_loss = ComputeLoss(model)  # init loss class
     callbacks.run('on_train_start')
@@ -348,7 +349,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     imgs = nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
 
             # Forward
-            with torch.cuda.amp.autocast(amp):
+            with torch.mlu.amp.autocast(amp):
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if RANK != -1:
@@ -371,7 +372,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Log
             if RANK in {-1, 0}:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
-                mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
+                mem = f'{torch.mlu.memory_reserved() / 1E9 if torch.mlu.is_available() else 0:.3g}G'  # (GB)
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 5) %
                                      (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots)
@@ -466,7 +467,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
         callbacks.run('on_train_end', last, best, plots, epoch, results)
 
-    torch.cuda.empty_cache()
+    torch.mlu.empty_cache()
     return results
 
 
@@ -489,7 +490,7 @@ def parse_opt(known=False):
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='', help='mlu device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
     parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='SGD', help='optimizer')
@@ -552,10 +553,10 @@ def main(opt, callbacks=Callbacks()):
         assert not opt.evolve, f'--evolve {msg}'
         assert opt.batch_size != -1, f'AutoBatch with --batch-size -1 {msg}, please pass a valid --batch-size'
         assert opt.batch_size % WORLD_SIZE == 0, f'--batch-size {opt.batch_size} must be multiple of WORLD_SIZE'
-        assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
-        torch.cuda.set_device(LOCAL_RANK)
-        device = torch.device('cuda', LOCAL_RANK)
-        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
+        assert torch.mlu.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
+        torch.mlu.set_device(LOCAL_RANK)
+        device = torch.device('mlu', LOCAL_RANK)
+        dist.init_process_group(backend="cncl") # if dist.is_cncl_available() else "gloo")
 
     # Train
     if not opt.evolve:

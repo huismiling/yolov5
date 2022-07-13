@@ -20,6 +20,7 @@ from zipfile import ZipFile
 
 import numpy as np
 import torch
+import torch_mlu
 import torch.nn.functional as F
 import yaml
 from PIL import ExifTags, Image, ImageOps
@@ -126,7 +127,7 @@ def create_dataloader(path,
             prefix=prefix)
 
     batch_size = min(batch_size, len(dataset))
-    nd = torch.cuda.device_count()  # number of CUDA devices
+    nd = torch.mlu.device_count()  # number of CUDA devices
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])  # number of workers
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates

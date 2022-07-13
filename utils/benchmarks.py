@@ -51,7 +51,7 @@ def run(
         imgsz=640,  # inference size (pixels)
         batch_size=1,  # batch size
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        device='',  # mlu device, i.e. 0 or 0,1,2,3 or cpu
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
@@ -65,7 +65,7 @@ def run(
             assert i != 5 or platform.system() == 'Darwin', 'inference only supported on macOS>=10.13'  # CoreML
             if 'cpu' in device.type:
                 assert cpu, 'inference not supported on CPU'
-            if 'cuda' in device.type:
+            if 'mlu' in device.type:
                 assert gpu, 'inference not supported on GPU'
 
             # Export
@@ -104,7 +104,7 @@ def test(
         imgsz=640,  # inference size (pixels)
         batch_size=1,  # batch size
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        device='',  # mlu device, i.e. 0 or 0,1,2,3 or cpu
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
@@ -137,7 +137,7 @@ def parse_opt():
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='', help='mlu device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--test', action='store_true', help='test exports only')
     parser.add_argument('--pt-only', action='store_true', help='test PyTorch only')

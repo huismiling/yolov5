@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sn
 import torch
+import torch_mlu
 from PIL import Image, ImageDraw, ImageFont
 
 from utils.general import (CONFIG_DIR, FONT, LOGGER, Timeout, check_font, check_requirements, clip_coords,

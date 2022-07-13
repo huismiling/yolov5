@@ -16,10 +16,11 @@ import numpy as np
 import pandas as pd
 import requests
 import torch
+import torch_mlu
 import torch.nn as nn
 import yaml
 from PIL import Image
-from torch.cuda import amp
+from torch.mlu import amp
 
 from utils.dataloaders import exif_transpose, letterbox
 from utils.general import (LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path,
@@ -335,7 +336,7 @@ class DetectMultiBackend(nn.Module):
             stride = max(int(model.stride.max()), 32)  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             model.half() if fp16 else model.float()
-            self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
+            self.model = model  # explicitly assign for to(), cpu(), mlu(), half()
         elif jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
             extra_files = {'config.txt': ''}  # model metadata
@@ -552,7 +553,7 @@ class AutoShape(nn.Module):
         self.model = model.eval()
 
     def _apply(self, fn):
-        # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
+        # Apply to(), cpu(), mlu(), half() to model tensors that are not parameters or registered buffers
         self = super()._apply(fn)
         if self.pt:
             m = self.model.model.model[-1] if self.dmb else self.model.model[-1]  # Detect()

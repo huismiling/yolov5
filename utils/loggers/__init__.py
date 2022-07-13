@@ -8,6 +8,7 @@ import warnings
 
 import pkg_resources as pkg
 import torch
+import torch_mlu
 from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, cv2, emojis
