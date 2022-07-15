@@ -42,17 +42,17 @@ changes** button. All done, your PR is now submitted to YOLOv5 for review and ap
 To allow your work to be integrated as seamlessly as possible, we advise you to:
 
 - ✅ Verify your PR is **up-to-date with upstream/master.** If your PR is behind upstream/master an
-  automatic [GitHub actions](https://github.com/ultralytics/yolov5/blob/master/.github/workflows/rebase.yml) rebase may
-  be attempted by including the /rebase command in a comment body, or by running the following code, replacing 'feature'
-  with the name of your local branch:
+  automatic [GitHub Actions](https://github.com/ultralytics/yolov5/blob/master/.github/workflows/rebase.yml) merge may
+  be attempted by writing /rebase in a new comment, or by running the following code, replacing 'feature' with the name
+  of your local branch:
 
-  ```bash
-  git remote add upstream https://github.com/ultralytics/yolov5.git
-  git fetch upstream
-  git checkout feature  # <----- replace 'feature' with local branch name
-  git merge upstream/master
-  git push -u origin -f
-  ```
+```bash
+git remote add upstream https://github.com/ultralytics/yolov5.git
+git fetch upstream
+# git checkout feature  # <--- replace 'feature' with local branch name
+git merge upstream/master
+git push -u origin -f
+```
 
 - ✅ Verify all Continuous Integration (CI) **checks are passing**.
 - ✅ Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase
@@ -62,7 +62,7 @@ To allow your work to be integrated as seamlessly as possible, we advise you to:
 
 If you spot a problem with YOLOv5 please submit a Bug Report!
 
-For us to start investigating a possibel problem we need to be able to reproduce it ourselves first. We've created a few
+For us to start investigating a possible problem we need to be able to reproduce it ourselves first. We've created a few
 short guidelines below to help users provide what we need in order to get started.
 
 When asking a question, people will be better able to provide help if you provide **code** that they can easily
@@ -70,21 +70,21 @@ understand and use to **reproduce** the problem. This is referred to by communit
 a [minimum reproducible example](https://stackoverflow.com/help/minimal-reproducible-example). Your code that reproduces
 the problem should be:
 
-* ✅ **Minimal** – Use as little code as possible that still produces the same problem
-* ✅ **Complete** – Provide **all** parts someone else needs to reproduce your problem in the question itself
-* ✅ **Reproducible** – Test the code you're about to provide to make sure it reproduces the problem
+- ✅ **Minimal** – Use as little code as possible that still produces the same problem
+- ✅ **Complete** – Provide **all** parts someone else needs to reproduce your problem in the question itself
+- ✅ **Reproducible** – Test the code you're about to provide to make sure it reproduces the problem
 
 In addition to the above requirements, for [Ultralytics](https://ultralytics.com/) to provide assistance your code
 should be:
 
-* ✅ **Current** – Verify that your code is up-to-date with current
+- ✅ **Current** – Verify that your code is up-to-date with current
   GitHub [master](https://github.com/ultralytics/yolov5/tree/master), and if necessary `git pull` or `git clone` a new
   copy to ensure your problem has not already been resolved by previous commits.
-* ✅ **Unmodified** – Your problem must be reproducible without any modifications to the codebase in this
+- ✅ **Unmodified** – Your problem must be reproducible without any modifications to the codebase in this
   repository. [Ultralytics](https://ultralytics.com/) does not provide support for custom code ⚠️.
 
-If you believe your problem meets all of the above criteria, please close this issue and raise a new one using the 🐛 **
-Bug Report** [template](https://github.com/ultralytics/yolov5/issues/new/choose) and providing
+If you believe your problem meets all of the above criteria, please close this issue and raise a new one using the 🐛
+**Bug Report** [template](https://github.com/ultralytics/yolov5/issues/new/choose) and providing
 a [minimum reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) to help us better
 understand and diagnose your problem.
 
